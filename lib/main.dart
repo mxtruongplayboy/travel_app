@@ -7,7 +7,7 @@ import 'package:travel_app/views/screens/homescreen.dart';
 import 'package:travel_app/views/screens/welcome_screen.dart';
 
 void main() {
-  const apiKey = 'AIzaSyCjnJ0PKitfDl5wMpWYruwuozz6CjHD1xc';
+  const apiKey = String.fromEnvironment('apiKey');
   if (apiKey.isEmpty) {
     print('API Key is missing. Please set the apiKey environment variable.');
     return;

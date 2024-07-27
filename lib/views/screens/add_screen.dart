@@ -28,6 +28,7 @@ class _AddScreenState extends State<AddScreen> {
   TextEditingController contentController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   bool isAIloading = false;
+  bool isLoading = false;
   List<Category> categories = [];
   Category? selectedCategory;
 
@@ -90,7 +91,7 @@ class _AddScreenState extends State<AddScreen> {
     String title = titleController.text;
     String content = contentController.text;
     String detailedPrompt =
-        "Dựa vào các hình ảnh được cung cấp, hãy viết một bài review chi tiết về địa điểm du lịch dựa vào tiêu đề '$title'. Bài viết nên tập trung vào không khí chung của địa điểm, các đặc điểm nổi bật và những cảm xúc mà địa điểm này mang lại cho du khách. Nếu có hình ảnh về đồ ăn, hãy mô tả về hương vị và trải nghiệm ẩm thực tại đây. Đề cập đến màu sắc và bố cục tổng quát của địa điểm, sử dụng nội dung của tôi: $content. đã được cung cấp và số lượng ảnh là ${images.length} để làm giàu cho bài viết. Hãy đảm bảo rằng bài review cung cấp thông tin hữu ích và thú vị cho những ai có ý định khám phá địa điểm này. Và ngôn ngữ của câu trả lời dựa vào ngôn ngữ của phần nội dung của tôi. Đặc biệt không được chỉ ra địa điểm cụ thể.";
+        "Dựa vào các hình ảnh được cung cấp, hãy viết một bài review chi tiết về địa điểm du lịch dựa vào tiêu đề '$title'. Bài viết nên tập trung vào không khí chung của địa điểm, các đặc điểm nổi bật và những cảm xúc mà địa điểm này mang lại cho du khách. Nếu có hình ảnh về đồ ăn, hãy mô tả về hương vị và trải nghiệm ẩm thực tại đây. Đề cập đến màu sắc và bố cục tổng quát của địa điểm, sử dụng nội dung của tôi: $content. đã được cung cấp và số lượng ảnh là ${images.length} để làm giàu cho bài viết. Hãy đảm bảo rằng bài review cung cấp thông tin hữu ích và thú vị cho những ai có ý định khám phá địa điểm này. Và ngôn ngữ của câu trả lời dựa vào ngôn ngữ của phần nội dung của tôi. Đặc biệt không được chỉ ra địa điểm cụ thể. Tôi chỉ cần khoảng 150 từ thôi";
     ai.TextPart prompt = ai.TextPart(detailedPrompt);
 
     try {
@@ -100,7 +101,9 @@ class _AddScreenState extends State<AddScreen> {
 
       List<String> words = response.text!.split(' ');
       int index = 0;
-
+      setState(() {
+        contentController.clear();
+      });
       Timer.periodic(Duration(milliseconds: 150), (timer) {
         if (index < words.length) {
           setState(() {
@@ -162,6 +165,10 @@ class _AddScreenState extends State<AddScreen> {
       return;
     }
 
+    setState(() {
+      isLoading = true;
+    });
+
     PostService postService = PostService();
     try {
       List<File> imageFiles = images.map((path) => File(path)).toList();
@@ -192,6 +199,10 @@ class _AddScreenState extends State<AddScreen> {
           backgroundColor: Colors.redAccent,
         ),
       );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -241,146 +252,157 @@ class _AddScreenState extends State<AddScreen> {
         iconTheme: IconThemeData(color: Colors.white),
         titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: <Widget>[
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey[850],
-                ),
-                height: 250,
-                child: PageView.builder(
-                  itemCount: images.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == images.length) {
-                      return Center(
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.add_a_photo,
-                            size: 50,
-                            color: Color.fromARGB(255, 255, 87, 51),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: Colors.grey[850],
+                    ),
+                    height: 250,
+                    child: PageView.builder(
+                      itemCount: images.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == images.length) {
+                          return Center(
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.add_a_photo,
+                                size: 50,
+                                color: Color.fromARGB(255, 255, 87, 51),
+                              ),
+                              onPressed: _addImage,
+                            ),
+                          );
+                        } else {
+                          return Image.file(File(images[index]));
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: titleController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Tiêu đề',
+                      labelStyle:
+                          TextStyle(color: Color.fromARGB(255, 255, 87, 51)),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _showCategoryDialog,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 15, horizontal: 10),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  getIconData(selectedCategory?.iconName ?? ''),
+                                  color: Color.fromARGB(255, 255, 87, 51),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  selectedCategory?.name ?? 'Chọn danh mục',
+                                  style: const TextStyle(
+                                      color: Colors.deepOrange, fontSize: 16),
+                                ),
+                              ],
+                            ),
                           ),
-                          onPressed: _addImage,
                         ),
-                      );
-                    } else {
-                      return Image.file(File(images[index]));
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: titleController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: 'Tiêu đề',
-                  labelStyle:
-                      TextStyle(color: Color.fromARGB(255, 255, 87, 51)),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
+                      ),
+                    ],
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        Icons.location_on,
+                        color: Color.fromARGB(255, 255, 87, 51),
+                        size: 30,
+                      ),
+                      SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _showCategoryDialog,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 15, horizontal: 10),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              getIconData(selectedCategory?.iconName ?? ''),
-                              color: Color.fromARGB(255, 255, 87, 51),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              selectedCategory?.name ?? 'Chọn danh mục',
-                              style: const TextStyle(
-                                  color: Colors.deepOrange, fontSize: 16),
-                            ),
-                          ],
-                        ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: contentController,
+                    style: TextStyle(color: Colors.white),
+                    maxLines: 10,
+                    decoration: const InputDecoration(
+                      labelText: 'Nội dung',
+                      labelStyle:
+                          TextStyle(color: Color.fromARGB(255, 255, 87, 51)),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey),
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: <Widget>[
-                  Icon(
-                    Icons.location_on,
-                    color: Color.fromARGB(255, 255, 87, 51),
-                    size: 30,
-                  ),
-                  SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      location,
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: contentController,
-                style: TextStyle(color: Colors.white),
-                maxLines: 10,
-                decoration: const InputDecoration(
-                  labelText: 'Nội dung',
-                  labelStyle:
-                      TextStyle(color: Color.fromARGB(255, 255, 87, 51)),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  ElevatedButton(
-                    onPressed: _postContent,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromARGB(255, 255, 87, 51),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      ElevatedButton(
+                        onPressed: _postContent,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color.fromARGB(255, 255, 87, 51),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 32, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          '                         Đăng bài                       ',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      '                         Đăng bài                       ',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
+          if (isLoading)
+            Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    Color.fromARGB(255, 255, 87, 51)),
+              ),
+            ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _editContentWithAI,

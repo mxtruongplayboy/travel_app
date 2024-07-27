@@ -12,6 +12,10 @@ class _PointPurchaseScreenState extends State<PointPurchaseScreen> {
   String _selectedAmount = '100000 VND';
   bool _showQRCode = false;
 
+  final String _bankAccount = '123456789';
+  final String _bankName = 'Your Bank';
+  final String _recipientName = 'Recipient Name';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,21 +32,21 @@ class _PointPurchaseScreenState extends State<PointPurchaseScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text(
+            const Text(
               'Thông tin thanh toán',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
-              'Số điểm:${int.parse(_selectedAmount.split(' ')[0]) / 10}',
-              style: TextStyle(fontSize: 18),
+              'Số điểm: ${int.parse(_selectedAmount.split(' ')[0]) / 10}',
+              style: const TextStyle(fontSize: 18),
             ),
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(height: 20),
+            const Text(
               'Chọn mệnh giá',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             GridView.count(
               crossAxisCount: 3,
               shrinkWrap: true,
@@ -59,12 +63,13 @@ class _PointPurchaseScreenState extends State<PointPurchaseScreen> {
                 _buildAmountButton('10000 VND'),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _generateQRCode,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.deepOrange,
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
               ),
               child: const Text('Nạp điểm',
                   style: TextStyle(
@@ -107,19 +112,22 @@ class _PointPurchaseScreenState extends State<PointPurchaseScreen> {
   }
 
   void _generateQRCode() {
+    String amount = _selectedAmount.split(' ')[0];
+    String qrData =
+        'Bank: $_bankName\nAccount: $_bankAccount\nRecipient: $_recipientName\nAmount: $amount VND';
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('QR Code'),
+          title: const Text('QR Code'),
           content: QrImageView(
-            data: 'Nạp điểm: $_selectedAmount',
+            data: qrData,
             version: QrVersions.auto,
             size: 200.0,
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Close'),
+              child: const Text('Close'),
               onPressed: () {
                 Navigator.of(context).pop();
               },

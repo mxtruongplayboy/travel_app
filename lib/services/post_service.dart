@@ -16,6 +16,7 @@ class PostService {
     double? maxDistance,
     int? limit,
     File? image,
+    String? keywords,
   }) async {
     String? token = await userService.getToken();
     if (token == null) {
@@ -37,6 +38,10 @@ class PostService {
 
     if (limit != null) {
       queryParams['limit'] = limit.toString();
+    }
+
+    if (keywords != null) {
+      queryParams['keywords'] = keywords.toString();
     }
 
     final Uri url = Uri.parse(apiUrl).replace(queryParameters: queryParams);
@@ -139,7 +144,8 @@ class PostService {
     }
   }
 
-  Future<String> checkinPost(String postId, double longitude, double latitude) async {
+  Future<String> checkinPost(
+      String postId, double longitude, double latitude) async {
     String? token = await userService.getToken();
     if (token == null) {
       throw Exception('Không tìm thấy token, vui lòng đăng nhập trước.');

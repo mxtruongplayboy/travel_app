@@ -27,7 +27,7 @@ class CoordinatesScreen extends StatefulWidget {
 }
 
 class _CoordinatesScreenState extends State<CoordinatesScreen> {
-  double? _selectedDistance = 2;
+  double? _selectedDistance = 20;
   int _selectedCategoryIndex = 0;
   final CategoryService _categoryService = CategoryService();
   final PostService _postService = PostService();
@@ -38,12 +38,22 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
   late String address;
   GeoCode geoCode = GeoCode();
   final RetrieveService _retrieveService = RetrieveService();
+  List<String> _keyWords = [];
+  final TextEditingController _keywordsController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _fetchCategories();
     _getAddress();
+  }
+
+  void _setKeyWords(List<String> keyWords) {
+    setState(() {
+      _keyWords = keyWords;
+      _keywordsController.text = _keyWords.join(', ');
+      _fetchPosts();
+    });
   }
 
   void _fetchCategories() {
@@ -73,6 +83,9 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
           latitude: latitude,
           maxDistance: _selectedDistance,
           image: _selectedImage, // Truyền ảnh đã chọn vào hàm fetchPosts
+          keywords: _keywordsController.text.isEmpty
+              ? null
+              : _keywordsController.text,
         );
       } else {
         _futurePosts = _postService.fetchPosts(
@@ -81,6 +94,9 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
           categoryId: categoryId,
           maxDistance: _selectedDistance,
           image: _selectedImage, // Truyền ảnh đã chọn vào hàm fetchPosts
+          keywords: _keywordsController.text.isEmpty
+              ? null
+              : _keywordsController.text,
         );
       }
     });
@@ -340,8 +356,10 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
                               Navigator.of(context).pop();
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      ResultScreen(result: result),
+                                  builder: (context) => ResultScreen(
+                                    result: result,
+                                    setKeyWords: _setKeyWords,
+                                  ),
                                 ),
                               );
                             } catch (e) {
@@ -414,6 +432,7 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
                         borderRadius:
                             const BorderRadius.all(Radius.circular(50))),
                     child: TextField(
+                      controller: _keywordsController,
                       decoration: InputDecoration(
                         hintStyle: const TextStyle(color: Colors.grey),
                         hintText: 'Bạn muốn tới đâu ?',
@@ -437,6 +456,10 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
                       style: const TextStyle(
                         color: Colors.white,
                       ),
+                      onSubmitted: (value) {
+                        _fetchPosts();
+                        _keywordsController.clear();
+                      },
                     ),
                   ),
                 ),
