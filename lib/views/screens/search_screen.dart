@@ -5,6 +5,7 @@ import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
 import 'package:travel_app/providers/location_provider.dart';
+import 'package:travel_app/views/screens/favorite_screen.dart';
 
 import 'coordinates_screen.dart';
 

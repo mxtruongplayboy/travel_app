@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -69,9 +70,9 @@ class _AddScreenState extends State<AddScreen> {
   }
 
   void _editContentWithAI() async {
-    setState(() {
-      isAIloading = true;
-    });
+    // setState(() {
+    //   isAIloading = true;
+    // });
     final apiKey = 'AIzaSyCjnJ0PKitfDl5wMpWYruwuozz6CjHD1xc';
     final model = ai.GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
 
@@ -96,12 +97,34 @@ class _AddScreenState extends State<AddScreen> {
       final response = await model.generateContent([
         ai.Content.multi([prompt, ...imageParts])
       ]);
-      setState(() {
-        contentController.text = response.text!;
-        isAIloading = false;
+
+      List<String> words = response.text!.split(' ');
+      int index = 0;
+
+      Timer.periodic(Duration(milliseconds: 150), (timer) {
+        if (index < words.length) {
+          setState(() {
+            contentController.text += words[index] + ' ';
+          });
+          index++;
+        } else {
+          timer.cancel(); // Stop the timer when all words have been displayed
+          setState(() {
+            isAIloading = false;
+          });
+        }
       });
     } catch (e) {
       log('Error with AI content generation: $e');
+      if (e.toString().contains(
+          'GenerativeAIException: Candidate was blocked due to safety')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nội dung không phù hợp, hãy thử lại.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     }
   }
 
@@ -318,32 +341,22 @@ class _AddScreenState extends State<AddScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              isAIloading
-                  ? Container(
-                      width: double.infinity,
-                      height: 150,
-                      color: Colors.grey[850],
-                      child: Lottie.asset(
-                        'assets/images/ai.json',
-                        fit: BoxFit.contain,
-                      ),
-                    )
-                  : TextField(
-                      controller: contentController,
-                      style: TextStyle(color: Colors.white),
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        labelText: 'Nội dung',
-                        labelStyle:
-                            TextStyle(color: Color.fromARGB(255, 255, 87, 51)),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey),
-                        ),
-                      ),
-                    ),
+              TextField(
+                controller: contentController,
+                style: TextStyle(color: Colors.white),
+                maxLines: 10,
+                decoration: const InputDecoration(
+                  labelText: 'Nội dung',
+                  labelStyle:
+                      TextStyle(color: Color.fromARGB(255, 255, 87, 51)),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey),
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

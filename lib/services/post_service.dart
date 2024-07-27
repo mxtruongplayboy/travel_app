@@ -6,7 +6,7 @@ import 'package:travel_app/services/user_service.dart';
 import '../models/post_model.dart';
 
 class PostService {
-  final String apiUrl = "http://192.168.110.223:3000/api/posts";
+  final String apiUrl = "http://192.168.206.118:3000/api/posts";
   UserService userService = UserService();
 
   Future<List<Post>> fetchPosts({

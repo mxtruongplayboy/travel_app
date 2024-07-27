@@ -10,6 +10,6 @@ class CustomFloatingActionButtonLocation extends FloatingActionButtonLocation {
   Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
     final Offset offset = location.getOffset(scaffoldGeometry);
     return Offset(
-        offset.dx, offset.dy + offsetY); // Lùi xuống bằng cách tăng giá trị dy
+        offset.dx, offset.dy + offsetY);
   }
 }

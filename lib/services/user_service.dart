@@ -5,7 +5,7 @@ import 'package:travel_app/models/user_model.dart';
 
 class UserService {
   final String baseUrl =
-      "http://192.168.110.223:3000/api/users"; // Update to your IP address
+      "http://192.168.206.118:3000/api/users"; // Update to your IP address
 
   Future<User> login(String email, String password) async {
     final response = await http.post(

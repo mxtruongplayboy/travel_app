@@ -2,13 +2,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_app/models/comment.dart';
+import 'package:travel_app/services/user_service.dart';
 
 class CommentService {
-  final String apiUrl = "http://192.168.110.223:3000/api/comments";
+  final String apiUrl = "http://192.168.206.118:3000/api/comments";
+  UserService userService = UserService();
 
   Future<Map<String, dynamic>> createComment(
       String content, int star, String postId) async {
-    String? token = await _getToken();
+   String? token = await userService.getToken();
     if (token == null) {
       throw Exception('No token found');
     }
@@ -34,7 +36,7 @@ class CommentService {
   }
 
   Future<List<Comment>> getComments(String postId) async {
-    String? token = await _getToken();
+    String? token = await userService.getToken();
     if (token == null) {
       throw Exception('No token found');
     }
@@ -73,10 +75,5 @@ class CommentService {
       print('Response body: ${response.body}');
       throw Exception('Failed to get comments');
     }
-  }
-
-  Future<String?> _getToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
   }
 }

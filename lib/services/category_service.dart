@@ -4,7 +4,7 @@ import 'package:travel_app/models/category_model.dart';
 import 'package:travel_app/services/user_service.dart';
 
 class CategoryService {
-  final String apiUrl = "http://192.168.110.223:3000/api/categories";
+  final String apiUrl = "http://192.168.206.118:3000/api/categories";
   UserService userService = UserService();
 
   Future<List<Category>> fetchCategories() async {

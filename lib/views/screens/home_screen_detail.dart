@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:travel_app/models/category_model.dart';
 import 'package:travel_app/models/post_model.dart';
 import 'package:travel_app/models/user_model.dart';
@@ -30,6 +31,8 @@ class _HomeScreenDetailState extends State<HomeScreenDetail> {
   List<Category> _categories = [];
   int _selectedCategoryIndex = 0;
   User? _user;
+  double _latitude = 16.061199362537437;
+  double _longitude = 108.22684056860842;
 
   @override
   void initState() {
@@ -52,25 +55,25 @@ class _HomeScreenDetailState extends State<HomeScreenDetail> {
     if (_categories.isNotEmpty) {
       setState(() {
         _futurePosts = _postService.fetchPosts(
-            longitude: 50, // Replace with actual longitude
-            latitude: 40, // Replace with actual latitude
+            longitude: _longitude,
+            latitude: _latitude,
             categoryId: _categories[_selectedCategoryIndex].id,
-            maxDistance: 20, // Use category ID
+            maxDistance: 20,
             limit: 3);
       });
     }
   }
 
   void _fetchUser() {
-    _userService.getUserInfo().then((user) {
-      setState(() {
-        try {
-          _user = user;
-        } catch (e) {
-          _showInvalidTokenDialog();
-        }
-      });
-    });
+    try {
+      _userService.getUserInfo().then((value) => {
+            setState(() {
+              _user = value;
+            })
+          });
+    } catch (e) {
+      _showInvalidTokenDialog();
+    }
   }
 
   void _showInvalidTokenDialog() {
@@ -89,13 +92,130 @@ class _HomeScreenDetailState extends State<HomeScreenDetail> {
                   MaterialPageRoute(
                     builder: (context) => WelcomeScreen(),
                   ),
-                ); // Navigate to the welcome screen
+                );
               },
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Kiểm tra xem dịch vụ định vị có được bật không.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      print('Location services are disabled.');
+      await _showLocationServiceDialog();
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      await _showLocationPermissionDialog();
+      return;
+    }
+
+    if (permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always) {
+      try {
+        Position position = await Geolocator.getCurrentPosition();
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      } catch (e) {
+        print('Error getting location: $e');
+        _latitude = 16.061199362537437;
+        _longitude = 108.22684056860842;
+      }
+    }
+  }
+
+  Future<void> _showLocationServiceDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Bật Dịch Vụ Định Vị'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Dịch vụ định vị bị tắt, vui lòng bật lại.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Đồng Ý'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _openLocationSettings();
+              },
+            ),
+            TextButton(
+              child: const Text('Từ Chối'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showLocationPermissionDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cấp Quyền Truy Cập Vị Trí'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Ứng dụng cần quyền truy cập vị trí để tiếp tục.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Đồng Ý'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Geolocator.requestPermission().then((permission) {
+                  if (permission == LocationPermission.whileInUse ||
+                      permission == LocationPermission.always) {
+                    _determinePosition();
+                  } else {
+                    _latitude = 16.061199362537437;
+                    _longitude = 108.22684056860842;
+                  }
+                });
+              },
+            ),
+            TextButton(
+              child: const Text('Từ Chối'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _latitude = 16.061199362537437;
+                _longitude = 108.22684056860842;
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _openLocationSettings() {
+    Geolocator.openLocationSettings().then((value) {
+      _determinePosition();
+    });
   }
 
   @override

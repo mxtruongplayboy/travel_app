@@ -1,12 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geocode/geocode.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:travel_app/models/category_model.dart';
 import 'package:travel_app/models/post_model.dart';
+import 'package:travel_app/models/retrieve_model.dart';
 import 'package:travel_app/services/category_service.dart';
 import 'package:travel_app/services/post_service.dart';
+import 'package:travel_app/services/retrieve_service.dart';
 import 'package:travel_app/views/screens/welcome_screen.dart';
 import 'package:travel_app/views/widgets/category_widget.dart';
+import 'package:travel_app/views/widgets/retrieve_widget.dart';
 import '../widgets/location_item.dart';
 
 class CoordinatesScreen extends StatefulWidget {
@@ -22,19 +27,23 @@ class CoordinatesScreen extends StatefulWidget {
 }
 
 class _CoordinatesScreenState extends State<CoordinatesScreen> {
-  double? _selectedDistance = 2; // Lưu trữ giá trị ban đầu
+  double? _selectedDistance = 2;
   int _selectedCategoryIndex = 0;
   final CategoryService _categoryService = CategoryService();
   final PostService _postService = PostService();
   late Future<List<Category>> _futureCategories = Future.value([]);
   List<Category> _categories = [];
   late Future<List<Post>> _futurePosts = Future.value([]);
-  File? _selectedImage; // Thêm biến để lưu trữ ảnh đã chọn
+  File? _selectedImage;
+  late String address;
+  GeoCode geoCode = GeoCode();
+  final RetrieveService _retrieveService = RetrieveService();
 
   @override
   void initState() {
     super.initState();
     _fetchCategories();
+    _getAddress();
   }
 
   void _fetchCategories() {
@@ -233,6 +242,140 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
     }
   }
 
+  void _getAddress() {
+    double longitude = double.parse(widget.message.split(',')[1]);
+    double latitude = double.parse(widget.message.split(',')[0]);
+    setState(() {
+      address = 'Vị trí hiện tại';
+    });
+
+    geoCode
+        .reverseGeocoding(latitude: latitude, longitude: longitude)
+        .then((value) => {
+              setState(() {
+                address =
+                    '${value.streetNumber}, ${value.streetAddress}, ${value.city}, ${value.countryName}' ??
+                        '';
+              }),
+              value.streetAddress == null
+                  ? setState(() {
+                      address = 'Vị trí hiện tại';
+                    })
+                  : setState(() {
+                      address =
+                          '${value.streetNumber}, ${value.streetAddress}, ${value.city}, ${value.countryName}' ??
+                              '';
+                    })
+            });
+
+    if (address.split(',')[0] == null) {
+      setState(() {
+        address = 'Vị trí hiện tại';
+      });
+    }
+  }
+
+  Future<void> _showLinkDialog() async {
+    TextEditingController linkController = TextEditingController();
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.grey[850],
+              title: const Text(
+                'Nhập link',
+                style: TextStyle(
+                  color: Color.fromARGB(255, 255, 87, 51),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: isLoading
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color.fromARGB(255, 255, 87, 51),
+                        ),
+                      ),
+                    )
+                  : TextField(
+                      controller: linkController,
+                      decoration: const InputDecoration(
+                        hintText: "Nhập link tại đây",
+                        hintStyle: TextStyle(color: Colors.grey),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color.fromARGB(255, 255, 87, 51),
+                          ),
+                        ),
+                      ),
+                      cursorColor: Color.fromARGB(255, 255, 87, 51),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+              actions: isLoading
+                  ? []
+                  : [
+                      TextButton(
+                        child: const Text(
+                          "OK",
+                          style: TextStyle(
+                              color: Color.fromARGB(255, 255, 87, 51)),
+                        ),
+                        onPressed: () async {
+                          String url = linkController.text;
+                          if (url.isNotEmpty) {
+                            setState(() {
+                              isLoading = true;
+                            });
+                            try {
+                              RetrieveResult result = await _retrieveService
+                                  .fetchRetrieveResult(url, 'platform');
+                              Navigator.of(context).pop();
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ResultScreen(result: result),
+                                ),
+                              );
+                            } catch (e) {
+                              // Xử lý lỗi khi gọi API
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed to retrieve data: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              setState(() {
+                                isLoading = false;
+                              });
+                            }
+                          }
+                        },
+                      ),
+                      TextButton(
+                        child: const Text(
+                          "Cancel",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -245,13 +388,13 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: const TextField(
+              child: TextField(
                 decoration: InputDecoration(
                   hintStyle: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                   ),
-                  hintText: 'Khánh An 9, Hoà Khánh Nam, Liên Chiểu, Đà Nẵng',
+                  hintText: address,
                   border: InputBorder.none,
                   icon: Icon(
                     Icons.location_on_outlined,
@@ -275,8 +418,13 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
                         hintStyle: const TextStyle(color: Colors.grey),
                         hintText: 'Bạn muốn tới đâu ?',
                         border: InputBorder.none,
-                        prefixIcon: const Icon(Icons.search_outlined,
-                            color: Color.fromARGB(255, 255, 87, 51)),
+                        prefixIcon: IconButton(
+                          icon: const Icon(Icons.link_outlined,
+                              color: Color.fromARGB(255, 255, 87, 51)),
+                          onPressed: () {
+                            _showLinkDialog();
+                          },
+                        ),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.camera_alt_outlined,
                               color: Color.fromARGB(255, 255, 87, 51)),
@@ -286,7 +434,7 @@ class _CoordinatesScreenState extends State<CoordinatesScreen> {
                         ),
                       ),
                       cursorColor: Color.fromARGB(255, 255, 87, 51),
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                       ),
                     ),
