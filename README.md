@@ -14,7 +14,9 @@ This application supports independent travelers to search or post a little-known
 ## 🏅 Achievements
 
 - **🏆 Award:** First Prize of UNIHACK 2024 Competition.
-- Click [here](https://www.baodanang.vn/kinhte/202407/ung-dung-ho-tro-tim-kiem-dia-diem-du-lich-doat-giai-quan-quan-cuoc-thi-unihack-2024-3978531/) to view article.
+- [Báo Đà Nẵng](https://www.baodanang.vn/kinhte/202407/ung-dung-ho-tro-tim-kiem-dia-diem-du-lich-doat-giai-quan-quan-cuoc-thi-unihack-2024-3978531/).
+- [CỤC THÔNG TIN KHOA HỌC VÀ CÔNG NGHỆ QUỐC GIA](https://vista.gov.vn/vi/news/khoi-nghiep-doi-moi-sang-tao/ung-dung-hidden-gems-gianh-quan-quan-tai-unihack-2024-9237.html).
+- [Đại Học Đà Nẵng](https://www.udn.vn/english/Detail/students-of-university-of-science-and-technology-the-university-of-danang-won-the-championship-of-the-unihack-2024-application-programming-competition).
 
 ## 📸 Screenshots
 
